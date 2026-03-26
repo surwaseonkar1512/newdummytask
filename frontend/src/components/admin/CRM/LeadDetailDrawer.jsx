@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Mail, Phone, Clock, FileText, Image as ImageIcon, Trash2, Send, Tag } from 'lucide-react';
+import { X, Mail, Phone, Clock, FileText, Image as ImageIcon, Trash2, Send, Tag, ExternalLink } from 'lucide-react';
 import moment from 'moment';
 import { leadApi } from '../../../api';
 import { toast } from 'react-toastify';
@@ -44,7 +44,7 @@ const LeadDetailDrawer = ({ lead, onClose, onUpdate }) => {
   const renderProductDetails = () => {
     if (lead.source === 'product') {
       return (
-        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 mt-4">
+        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 mt-4 relative group hover:shadow-sm transition-all">
           <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center"><Tag size={14} className="mr-1" /> Product Interest</h4>
           <p className="font-semibold text-gray-900">{lead.product?.name || 'Unknown Product'}</p>
           {(lead.product?.size || lead.product?.color) && (
@@ -52,6 +52,11 @@ const LeadDetailDrawer = ({ lead, onClose, onUpdate }) => {
               {lead.product.size && <span><strong className="text-gray-800">Size:</strong> {lead.product.size}</span>}
               {lead.product.color && <span><strong className="text-gray-800">Color:</strong> {lead.product.color}</span>}
             </div>
+          )}
+          {lead.product?.productId && (
+            <a href={`/product/${lead.product.productId._id || lead.product.productId}`} target="_blank" rel="noreferrer" title="View Product Page" className="absolute top-4 right-4 text-purple-600 hover:text-white bg-purple-100 hover:bg-purple-600 p-2 rounded-full opacity-50 sm:opacity-0 group-hover:opacity-100 transition-all">
+              <ExternalLink size={16} />
+            </a>
           )}
         </div>
       );
@@ -132,6 +137,16 @@ const LeadDetailDrawer = ({ lead, onClose, onUpdate }) => {
           </div>
 
           {renderProductDetails()}
+
+          {/* Order / Reference Image */}
+          {lead.orderImage && lead.orderImage.url && (
+            <div>
+              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center"><ImageIcon size={14} className="mr-1" /> Reference / Order Image</h4>
+              <a href={lead.orderImage.url} target="_blank" rel="noreferrer" className="block w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:opacity-90 transition-opacity">
+                <img src={lead.orderImage.url} alt="Reference" className="w-full h-auto max-h-48 object-cover bg-gray-50" />
+              </a>
+            </div>
+          )}
 
           {/* User Message */}
           {lead.message && (

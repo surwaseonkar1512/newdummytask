@@ -1,11 +1,37 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { Mail, Phone, MapPin, Send, Loader2, Check } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Loader2, Check, Upload, X } from 'lucide-react';
 
 const Contact = () => {
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '', orderImage: null });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    // Instant Local Preview
+    const previewUrl = URL.createObjectURL(file);
+    setFormData(prev => ({ ...prev, orderImage: { url: previewUrl, local: true } }));
+    setImageUploading(true);
+    
+    const formDataObj = new FormData();
+    formDataObj.append('image', file);
+    
+    try {
+      const { data } = await axios.post('/api/upload/public', formDataObj);
+      setFormData(prev => ({ ...prev, orderImage: data }));
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      alert('Failed to upload image. Please try again.');
+      setFormData(prev => ({ ...prev, orderImage: null }));
+    } finally {
+      setImageUploading(false);
+      URL.revokeObjectURL(previewUrl);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,10 +42,11 @@ const Contact = () => {
         email: formData.email,
         phone: formData.phone,
         message: formData.message,
+        orderImage: formData.orderImage,
         source: 'contact'
       });
       setSuccess(true);
-      setFormData({ name: '', email: '', phone: '', message: '' });
+      setFormData({ name: '', email: '', phone: '', message: '', orderImage: null });
     } catch (error) {
       console.error('Error submitting form:', error);
     } finally {
@@ -103,6 +130,34 @@ const Contact = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Your Message</label>
                   <textarea required rows="4" value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all" placeholder="How can we help you?"></textarea>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Reference / Order Image (Optional)</label>
+                  <div className="flex items-center gap-4">
+                    {formData.orderImage ? (
+                      <div className="relative inline-block">
+                        <img src={formData.orderImage.url} alt="Reference" className={`w-24 h-24 object-cover rounded-xl border border-gray-200 shadow-sm transition-all ${imageUploading ? 'opacity-50 blur-[2px] grayscale-[50%]' : ''}`} />
+                        {imageUploading && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <Loader2 className="animate-spin text-purple-600" size={24} />
+                          </div>
+                        )}
+                        {!imageUploading && (
+                          <button type="button" onClick={() => setFormData({...formData, orderImage: null})} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors">
+                            <X size={14} />
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                        <div className="flex flex-col items-center justify-center h-full">
+                          {imageUploading ? <Loader2 className="animate-spin text-purple-500 mb-1" size={20} /> : <Upload className="text-gray-400 mb-1" size={20} />}
+                          <p className="text-xs text-gray-500 font-medium">{imageUploading ? 'Uploading...' : 'Click to attach image'}</p>
+                        </div>
+                        <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={imageUploading} />
+                      </label>
+                    )}
+                  </div>
                 </div>
                 <button type="submit" disabled={loading} className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white font-bold text-lg rounded-xl flex items-center justify-center transition-colors disabled:opacity-50 shadow-lg shadow-purple-200">
                   {loading ? <Loader2 className="animate-spin mr-2" size={24} /> : <Send className="mr-2" size={20} />} 

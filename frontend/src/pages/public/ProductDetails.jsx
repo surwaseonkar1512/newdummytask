@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, Link } from 'react-router-dom';
-import { Loader2, ChevronRight, Check, Tag, Info, List as ListIcon, PlayCircle } from 'lucide-react';
+import { Loader2, ChevronRight, Check, Tag, Info, List as ListIcon, PlayCircle, Upload, X } from 'lucide-react';
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -11,9 +11,35 @@ const ProductDetails = () => {
   
   // Quote Form State
   const [showQuote, setShowQuote] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '', requirements: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', requirements: '', orderImage: null, size: '' });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    // Instant Local Preview
+    const previewUrl = URL.createObjectURL(file);
+    setFormData(prev => ({ ...prev, orderImage: { url: previewUrl, local: true } }));
+    setImageUploading(true);
+    
+    const formDataObj = new FormData();
+    formDataObj.append('image', file);
+    
+    try {
+      const { data } = await axios.post('/api/upload/public', formDataObj);
+      setFormData(prev => ({ ...prev, orderImage: data }));
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      alert('Failed to upload image. Please try again.');
+      setFormData(prev => ({ ...prev, orderImage: null }));
+    } finally {
+      setImageUploading(false);
+      URL.revokeObjectURL(previewUrl);
+    }
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -43,10 +69,13 @@ const ProductDetails = () => {
         email: formData.email,
         phone: formData.phone,
         message: `Quote request for ${product.name}. Req: ${formData.requirements}`,
+        orderImage: formData.orderImage,
         source: 'product',
         product: {
           productId: product._id,
-          name: product.name
+          name: product.name,
+          slug: product.slug,
+          size: formData.size
         }
       });
       setSuccess(true);
@@ -161,9 +190,48 @@ const ProductDetails = () => {
                          <input type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl outline-none focus:border-purple-500 shadow-sm" placeholder="+1..." />
                        </div>
                      </div>
+                     {product.sizes?.length > 0 && (
+                       <div>
+                         <label className="block text-sm font-semibold text-gray-700 mb-1">Select Size</label>
+                         <select value={formData.size} onChange={e => setFormData({...formData, size: e.target.value})} className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl outline-none focus:border-purple-500 shadow-sm">
+                           <option value="">-- Size not determined --</option>
+                           {product.sizes.map((sz, idx) => (
+                             <option key={idx} value={sz.label}>{sz.label} (₹{sz.price.toLocaleString()})</option>
+                           ))}
+                         </select>
+                       </div>
+                     )}
                      <div>
                        <label className="block text-sm font-semibold text-gray-700 mb-1">Specific Requirements</label>
                        <textarea rows="3" value={formData.requirements} onChange={e => setFormData({...formData, requirements: e.target.value})} placeholder="Desired size variations, material preferences, shipping constraints..." className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl outline-none focus:border-purple-500 shadow-sm"></textarea>
+                     </div>
+                     <div>
+                       <label className="block text-sm font-semibold text-gray-700 mb-1">Reference / Order Image (Optional)</label>
+                       <div className="flex items-center gap-4">
+                         {formData.orderImage ? (
+                           <div className="relative inline-block">
+                             <img src={formData.orderImage.url} alt="Reference" className={`w-24 h-24 object-cover rounded-xl border border-gray-200 shadow-sm transition-all ${imageUploading ? 'opacity-50 blur-[2px] grayscale-[50%]' : ''}`} />
+                             {imageUploading && (
+                               <div className="absolute inset-0 flex items-center justify-center">
+                                 <Loader2 className="animate-spin text-purple-600" size={24} />
+                               </div>
+                             )}
+                             {!imageUploading && (
+                               <button type="button" onClick={() => setFormData({...formData, orderImage: null})} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors">
+                                 <X size={14} />
+                               </button>
+                             )}
+                           </div>
+                         ) : (
+                           <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                             <div className="flex flex-col items-center justify-center h-full">
+                               {imageUploading ? <Loader2 className="animate-spin text-purple-500 mb-1" size={20} /> : <Upload className="text-gray-400 mb-1" size={20} />}
+                               <p className="text-xs text-gray-500 font-medium">{imageUploading ? 'Uploading...' : 'Click to attach image'}</p>
+                             </div>
+                             <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={imageUploading} />
+                           </label>
+                         )}
+                       </div>
                      </div>
                      <div className="flex gap-3 pt-2">
                        <button type="button" onClick={() => setShowQuote(false)} className="px-6 py-3 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 flex-1 transition-colors">Cancel</button>

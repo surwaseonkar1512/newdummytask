@@ -26,9 +26,12 @@ const leadSchema = new mongoose.Schema({
   product: {
     productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
     name: String,
+    slug: String,
     size: String,
     color: String
   },
+  
+  orderImage: { url: String, public_id: String },
   
   customDetails: {
     description: String,

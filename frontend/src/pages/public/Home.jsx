@@ -75,10 +75,10 @@ const Home = () => {
         <div className="flex overflow-x-auto gap-6 pb-8 pt-4 snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
           {categories?.map?.((cat, idx) => (
             <Link key={cat._id} to={`/gallery?category=${cat._id}`} className="snap-start flex-shrink-0 w-[85vw] sm:w-[320px] md:w-[380px] group relative h-96 rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.06)] block border border-gray-100">
-              <img 
-                src={cat.image?.url || `https://images.unsplash.com/photo-${['1513364776144-60967b0f800f', '1582200845347-195cbb4fa506', '1618022325802-7e5e732d97a1'][idx % 3]}?q=80&w=800&auto=format&fit=crop`} 
-                alt={cat.name} 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+              <img
+                src={cat.image?.url || `https://images.unsplash.com/photo-${['1513364776144-60967b0f800f', '1582200845347-195cbb4fa506', '1618022325802-7e5e732d97a1'][idx % 3]}?q=80&w=800&auto=format&fit=crop`}
+                alt={cat.name}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
               <div className="absolute bottom-0 left-0 p-8 w-full">
@@ -105,13 +105,13 @@ const Home = () => {
               View All <ArrowRight size={20} className="ml-2" />
             </Link>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {featuredProducts?.length > 0 ? featuredProducts?.map?.(prod => (
               <Link key={prod._id} to={`/product/${prod._id}`} className="group bg-white rounded-2xl overflow-hidden shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 border border-gray-100 flex flex-col">
                 <div className="relative aspect-square overflow-hidden bg-gray-50 flex-shrink-0">
-                  {prod.thumbnail?.url || (prod.images && prod.images.length > 0) ? (
-                    <img src={prod.thumbnail?.url || prod.images[0].url} alt={prod.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  {prod.thumbnail || (prod.images && prod.images.length > 0) ? (
+                    <img src={prod.thumbnail || prod.images[0].url} alt={prod.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs bg-gray-100">No image</div>
                   )}
@@ -125,8 +125,8 @@ const Home = () => {
                   <div className="text-xs text-purple-600 font-bold mb-2 uppercase tracking-wider">{prod.category?.name || 'Collection'}</div>
                   <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-purple-600 transition-colors line-clamp-2">{prod.name}</h3>
                   <div className="text-gray-900 font-medium mt-auto">
-                    {prod.productType === 'Custom' ? 'Custom Quote' : 
-                      prod.sizes?.length > 0 ? `From ₹${Math.min(...prod.sizes.map(s=>s.price)).toLocaleString()}` : 'Price on Request'
+                    {prod.productType === 'Custom' ? 'Custom Quote' :
+                      prod.sizes?.length > 0 ? `From ₹${Math.min(...prod.sizes.map(s => s.price)).toLocaleString()}` : 'Price on Request'
                     }
                   </div>
                 </div>
@@ -135,7 +135,7 @@ const Home = () => {
               <div className="col-span-4 text-center py-12 text-gray-500">More products arriving soon.</div>
             )}
           </div>
-          
+
           <div className="mt-8 text-center md:hidden">
             <Link to="/gallery" className="inline-flex items-center text-purple-600 font-semibold hover:text-purple-800 transition-colors">
               View All Gallery <ArrowRight size={20} className="ml-2" />
@@ -172,7 +172,7 @@ const Home = () => {
                 </Link>
               ))}
             </div>
-            
+
             <div className="mt-12 text-center">
               <Link to="/stories" className="inline-flex items-center px-8 py-3 border-2 border-gray-900 text-gray-900 font-bold rounded-full hover:bg-gray-900 hover:text-white transition-colors">
                 View All Case Studies
@@ -217,7 +217,7 @@ const Home = () => {
                 </div>
               ))}
             </div>
-            
+
           </div>
         </section>
       )}

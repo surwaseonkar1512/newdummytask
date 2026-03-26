@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { X, UserPlus, Loader2 } from 'lucide-react';
+import { X, UserPlus, Loader2, Upload } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { leadApi } from '../../../api';
+import axios from 'axios';
 
 const NewLeadModal = ({ isOpen, onClose, onLeadCreated }) => {
   const [submitting, setSubmitting] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [orderImage, setOrderImage] = useState(null);
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
   
   if (!isOpen) return null;
@@ -19,6 +22,7 @@ const NewLeadModal = ({ isOpen, onClose, onLeadCreated }) => {
         email: data.email,
         phone: data.phone || '',
         message: data.message || '',
+        orderImage: orderImage,
         source: 'manual',
         status: 'new'
       };
@@ -26,12 +30,37 @@ const NewLeadModal = ({ isOpen, onClose, onLeadCreated }) => {
       await leadApi.create(payload);
       toast.success('Manual lead created successfully');
       reset();
+      setOrderImage(null);
       onLeadCreated(); // Refresh pipeline visually
       onClose(); // Hide modal
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to create lead. Ensure email is provided.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const previewUrl = URL.createObjectURL(file);
+    setOrderImage({ url: previewUrl, local: true });
+    setImageUploading(true);
+    
+    const formDataObj = new FormData();
+    formDataObj.append('image', file);
+    
+    try {
+      const { data } = await axios.post('/api/upload/public', formDataObj);
+      setOrderImage(data);
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      toast.error('Failed to upload image.');
+      setOrderImage(null);
+    } finally {
+      setImageUploading(false);
+      URL.revokeObjectURL(previewUrl);
     }
   };
 
@@ -90,6 +119,35 @@ const NewLeadModal = ({ isOpen, onClose, onLeadCreated }) => {
               className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition-all"
               placeholder="What are they looking for?"
             ></textarea>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Reference Image (Optional)</label>
+            <div className="flex items-center gap-4">
+              {orderImage ? (
+                <div className="relative inline-block">
+                  <img src={orderImage.url} alt="Reference" className={`w-16 h-16 object-cover rounded-lg border border-gray-200 shadow-sm transition-all ${imageUploading ? 'opacity-50 blur-[2px] grayscale-[50%]' : ''}`} />
+                  {imageUploading && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Loader2 className="animate-spin text-purple-600" size={16} />
+                    </div>
+                  )}
+                  {!imageUploading && (
+                    <button type="button" onClick={() => setOrderImage(null)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors">
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-full h-16 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center justify-center h-full">
+                    {imageUploading ? <Loader2 className="animate-spin text-purple-500 mr-2" size={16} /> : <Upload className="text-gray-400 mr-2" size={16} />}
+                    <span className="text-xs text-gray-500 font-medium">{imageUploading ? 'Uploading...' : 'Click to attach image'}</span>
+                  </div>
+                  <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={imageUploading} />
+                </label>
+              )}
+            </div>
           </div>
 
           <div className="pt-2">
